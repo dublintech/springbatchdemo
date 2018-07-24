@@ -1,0 +1,80 @@
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+
+buildscript {
+	ext {
+		springBootVersion = '2.0.3.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.2.RELEASE")
+		//classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.prototypes.ad'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+
+	mavenCentral()
+	
+	// Work around until Oracle jar can be properly hosted
+	// see: https://stackoverflow.com/questions/20700053/how-to-add-local-jar-file-dependency-to-build-gradle-file 
+	flatDir {
+		dirs 'libs'
+	}
+}
+
+
+dependencies {
+	// this this one needed for jmx
+	compile('org.springframework.boot:spring-boot-starter-parent:2.0.1.RELEASE')
+	
+	// other
+	compile('org.springframework.boot:spring-boot-starter-batch')
+	compile("org.springframework.boot:spring-boot-starter-jdbc")
+	compile("org.springframework.boot:spring-boot-starter-web")
+	//compile("org.springframework.boot:spring-boot-starter-actuator")
+	
+	// Oracle jars can't be downloaded from maven so pull them from the file system
+	compile files('libs/ojdbc7.jar')
+	compile("com.h2database:h2")
+	
+	//integration - still not sure if this is needed?
+	//compile("org.springframework.integration:spring-integration-jmx:5.0.6.RELEASE")
+	// integration - still not sure if this is needed ?
+	//compile("org.springframework.boot   spring-boot-starter-actuator
+	
+	//classpath("com.oracle:ojdbc6:11.2.0.4")
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testCompile('org.springframework.batch:spring-batch-test')
+}
+
+task (RunBatch, dependsOn: 'classes', type: JavaExec) {
+	group 'Extract tasks'
+	description 'Runs the extract batch'
+	main = 'com.prototypes.aug.extract.ExtractApplication'
+	classpath = sourceSets.main.runtimeClasspath
+	systemProperties = System.properties
+	
+	DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+	Date dateobj = new Date();
+	String dtString = df.format(dateobj);
+	
+	args = ["param=${dtString}", "--myarg2", "--spring.profiles.active=dev"]
+	
+	// Do something like below to run in prod profile.binding 
+	// args = ["param=${dtString}", "--myarg2", "--spring.profiles.active=prod"
+}
+
+
